@@ -11,6 +11,22 @@ If you want to use it with opentracing you could consider installing:
 
 `$ go get github.com/Bose/go-gin-opentracing`
 
+## Dependencies - for local development
+If you want to see your traces on your local system, you'll need to run a tracing backend like Jaeger.   You'll find info about how-to in the [Jaeger Tracing github repo docs](https://github.com/jaegertracing/documentation/blob/master/content/docs/getting-started.md)
+Basically, you can run the Jaeger opentracing backend under docker via:
+
+```bash 
+docker run -d -e \
+  COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:latest
+  ```
 ## Usage
 
 ```go
