@@ -1,4 +1,4 @@
-# go-gin-prometheus
+# go-gin-logrus
 [![](https://godoc.org/github.com/Bose/go-gin-logrus?status.svg)](https://godoc.org/github.com/Bose/go-gin-logrus) 
 
 Gin Web Framework Open Tracing middleware
