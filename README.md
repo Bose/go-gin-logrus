@@ -7,6 +7,10 @@ Gin Web Framework Open Tracing middleware
 
 `$ go get github.com/Bose/go-gin-logrus`
 
+If you want to use it with opentracing you could consider installing:
+
+`$ go get github.com/Bose/go-gin-opentracing`
+
 ## Usage
 
 ```go
