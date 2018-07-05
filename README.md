@@ -28,6 +28,23 @@ docker run -d -e \
   jaegertracing/all-in-one:latest
   ```
 ## Usage
+```
+# example log entry for a gin request
+{
+  "comment": "",
+  "fields.time": "2018-07-05T00:08:01Z",
+  "ip": "::1",
+  "latency": "     13.352µs",
+  "level": "info",
+  "method": "GET",
+  "msg": "",
+  "path": "/",
+  "status": 200,
+  "time": "2018-07-04T20:08:01-04:00",
+  "traceIDField": "5035b28a16cd3e8e:5035b28a16cd3e8e:0:1",
+  "user-agent": "curl/7.54.0"
+}
+```
 
 ```go
 package main
