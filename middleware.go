@@ -82,10 +82,12 @@ func WithTracing(
 			// Append error field if this is an erroneous request.
 			entry.Error(c.Errors.String())
 		} else {
-			if useBanner {
-				entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
-			} else {
-				entry.Info()
+			if gin.Mode() != gin.ReleaseMode {
+				if useBanner {
+					entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
+				} else {
+					entry.Info()
+				}
 			}
 		}
 	}
