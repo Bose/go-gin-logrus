@@ -6,7 +6,7 @@ import (
 	"time"
 
 	ginlogrus "github.com/Bose/go-gin-logrus"
-	"github.com/Bose/go-gin-opentracing"
+	ginopentracing "github.com/Bose/go-gin-opentracing"
 	"github.com/gin-gonic/gin"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
@@ -26,7 +26,7 @@ func main() {
 
 	tracer, closer, err := ginopentracing.Config.New(fmt.Sprintf("go-gin-logrus-example.go::%s", hostName))
 	if err == nil {
-		fmt.Println("Setting global tracer")
+		fmt.Println("Setting global tracer: ", tracer)
 		defer closer.Close()
 		opentracing.SetGlobalTracer(tracer)
 	} else {
@@ -42,7 +42,7 @@ func main() {
 		useBanner,
 		time.RFC3339,
 		useUTC,
-		"traceIDField",
+		"requestID",
 		[]byte("uber-trace-id"),
 		[]byte("tracing-context"),
 		ginlogrus.WithAggregateLogging(true)))
