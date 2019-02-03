@@ -6,11 +6,10 @@ import (
 	"time"
 
 	ginlogrus "github.com/Bose/go-gin-logrus"
-	"github.com/sirupsen/logrus"
-
 	"github.com/Bose/go-gin-opentracing"
 	"github.com/gin-gonic/gin"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -45,9 +44,23 @@ func main() {
 		useUTC,
 		"traceIDField",
 		[]byte("uber-trace-id"),
-		[]byte("tracing-context")))
+		[]byte("tracing-context"),
+		ginlogrus.WithAggregateLogging(true)))
 
 	r.GET("/", func(c *gin.Context) {
+		logger := ginlogrus.GetCtxLogger(c) // will get a logger with the aggregate Logger set if it's enabled - handy if you've already set fields for the request
+		logger.Info("this will be aggregated into one write with the access log and will show up when the request is completed")
+
+		// add some new fields to the existing logger
+		logger = ginlogrus.SetCtxLogger(c, logger.WithFields(logrus.Fields{"comment": "this is an aggregated log entry"}))
+		logger.Debug("aggregated entry with new comment field")
+
+		// replace existing logger fields with new ones (notice it's logrus.WithFields())
+		logger = ginlogrus.SetCtxLogger(c, logrus.WithFields(logrus.Fields{"new-comment": "this is an aggregated log entry"}))
+		logger.Error("aggregated error entry with new-comment field")
+
+		logrus.Info("this will NOT be aggregated and will be logged immediately")
+		time.Sleep(2 * time.Second) // sleep so it's easy to see the timing of entries in the log
 		c.JSON(200, "Hello world!")
 	})
 
