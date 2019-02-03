@@ -163,6 +163,10 @@ func GetCtxLogger(c *gin.Context) *logrus.Entry {
 func CxtRequestID(c *gin.Context) string {
 	requestID := c.Request.Header.Get("uber-trace-id")
 	if len(requestID) == 0 {
+		id, found := c.Get("RequestID")
+		if found == true {
+			return id.(string)
+		}
 		requestID = uuid.New().String()
 		fmt.Println(requestID)
 	}
