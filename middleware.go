@@ -43,14 +43,15 @@ func WithTracing(
 		o(&opts)
 	}
 
-	var aggregateLoggingBuff strings.Builder
-	aggregateRequestLogger := &logrus.Logger{
-		Out:       &aggregateLoggingBuff,
-		Formatter: new(logrus.JSONFormatter),
-		Hooks:     make(logrus.LevelHooks),
-		Level:     logrus.DebugLevel,
-	}
 	return func(c *gin.Context) {
+		var aggregateLoggingBuff strings.Builder
+		aggregateRequestLogger := &logrus.Logger{
+			Out:       &aggregateLoggingBuff,
+			Formatter: new(logrus.JSONFormatter),
+			Hooks:     make(logrus.LevelHooks),
+			Level:     logrus.DebugLevel,
+		}
+
 		start := time.Now()
 		// some evil middlewares modify this values
 		path := c.Request.URL.Path
@@ -163,6 +164,7 @@ func CxtRequestID(c *gin.Context) string {
 	requestID := c.Request.Header.Get("uber-trace-id")
 	if len(requestID) == 0 {
 		requestID = uuid.New().String()
+		fmt.Println(requestID)
 	}
 	c.Set("RequestID", requestID)
 	return requestID
