@@ -2,9 +2,11 @@ package ginlogrus
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
@@ -24,8 +26,9 @@ type loggerEntryWithFields interface {
 //   3. A time package format string (e.g. time.RFC3339).
 //   4. A boolean stating whether to use UTC time zone or local.
 //   5. A string to use for Trace ID the Logrus log field.
-//   t. A []byte for the request header that contains the trace id
-//   5. A []byte for "getting" the requestID out of the gin.Context
+//   6. A []byte for the request header that contains the trace id
+//   7. A []byte for "getting" the requestID out of the gin.Context
+//   8. A list of possible ginlogrus.Options to apply
 func WithTracing(
 	logger loggerEntryWithFields,
 	useBanner bool,
@@ -33,11 +36,29 @@ func WithTracing(
 	utc bool,
 	logrusFieldNameForTraceID string,
 	traceIDHeader []byte,
-	contextTraceIDField []byte) gin.HandlerFunc {
+	contextTraceIDField []byte,
+	opt ...Option) gin.HandlerFunc {
+	opts := defaultOptions
+	for _, o := range opt {
+		o(&opts)
+	}
+
+	var aggregateLoggingBuff strings.Builder
+	aggregateRequestLogger := &logrus.Logger{
+		Out:       &aggregateLoggingBuff,
+		Formatter: new(logrus.JSONFormatter),
+		Hooks:     make(logrus.LevelHooks),
+		Level:     logrus.DebugLevel,
+	}
 	return func(c *gin.Context) {
 		start := time.Now()
 		// some evil middlewares modify this values
 		path := c.Request.URL.Path
+
+		if opts.aggregateLogging {
+			// you have to use this logger for every *logrus.Entry you create
+			c.Set("aggregate-logger", aggregateRequestLogger)
+		}
 		c.Next()
 
 		end := time.Now()
@@ -82,13 +103,80 @@ func WithTracing(
 			// Append error field if this is an erroneous request.
 			entry.Error(c.Errors.String())
 		} else {
-			if gin.Mode() != gin.ReleaseMode {
+			if gin.Mode() != gin.ReleaseMode && !opts.aggregateLogging {
 				if useBanner {
 					entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
 				} else {
 					entry.Info()
 				}
 			}
+			if opts.aggregateLogging {
+				entry.Logger = aggregateRequestLogger // which uses aggregateLoggingBuff for it's io.Writer
+				if useBanner {
+					entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
+				} else {
+					entry.Info()
+				}
+				fmt.Printf(aggregateLoggingBuff.String())
+			}
 		}
 	}
+}
+
+// SetCtxLogger - set the *logrus.Entry for this request in the gin.Context so it can be used throughout the request
+func SetCtxLogger(c *gin.Context, logger *logrus.Entry) *logrus.Entry {
+	log, found := c.Get("aggregate-logger")
+	if found {
+		logger.Logger = log.(*logrus.Logger)
+	}
+	// make sure the original fields for the request are still added
+	logger = logger.WithFields(logrus.Fields{
+		"requestID": CxtRequestID(c),
+		"method":    c.Request.Method,
+		"path":      c.Request.URL.Path})
+
+	c.Set("ctxLogger", logger)
+	return logger
+}
+
+// GetCtxLogger - get the *logrus.Entry for this request from the gin.Context
+func GetCtxLogger(c *gin.Context) *logrus.Entry {
+	l, ok := c.Get("ctxLogger")
+	if ok {
+		return l.(*logrus.Entry)
+	}
+	logger := logrus.WithFields(logrus.Fields{
+		"requestID": CxtRequestID(c),
+		"method":    c.Request.Method,
+		"path":      c.Request.URL.Path,
+	})
+	log, found := c.Get("aggregate-logger")
+	if found {
+		logger.Logger = log.(*logrus.Logger)
+	}
+	c.Set("ctxLogger", logger)
+	return logger
+}
+
+// CxtRequestID - set a logrus Field entry with the tracing ID for the request
+func CxtRequestID(c *gin.Context) string {
+	requestID := c.Request.Header.Get("uber-trace-id")
+	if len(requestID) == 0 {
+		requestID = uuid.New().String()
+	}
+	c.Set("RequestID", requestID)
+	return requestID
+}
+
+// GetCxtRequestID - dig the request ID out of the *logrus.Entry in the gin.Context
+func GetCxtRequestID(c *gin.Context) string {
+	l, ok := c.Get("ctxLogger")
+	if ok {
+		requestID, ok := l.(*logrus.Entry).Data["requestID"].(string)
+		if ok {
+			return requestID
+		}
+		return "unknown"
+	}
+	return "unknown"
 }
