@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"time"
+
+	"github.com/opentracing/opentracing-go/ext"
 
 	ginlogrus "github.com/Bose/go-gin-logrus"
 	ginopentracing "github.com/Bose/go-gin-opentracing"
@@ -24,14 +27,14 @@ func main() {
 		hostName = "unknown"
 	}
 
-	tracer, closer, err := ginopentracing.Config.New(fmt.Sprintf("go-gin-logrus-example.go::%s", hostName))
-	if err == nil {
-		fmt.Println("Setting global tracer: ", tracer)
-		defer closer.Close()
-		opentracing.SetGlobalTracer(tracer)
-	} else {
-		fmt.Println("Can't enable tracing: ", err.Error())
+	tracer, reporter, closer, err := ginopentracing.InitTracing(fmt.Sprintf("go-gin-logrus-example::%s", hostName), "localhost:5775", ginopentracing.WithEnableInfoLog(true))
+	if err != nil {
+		panic("unable to init tracing")
 	}
+	defer closer.Close()
+	defer reporter.Close()
+	opentracing.SetGlobalTracer(tracer)
+
 	p := ginopentracing.OpenTracer([]byte("api-request-"))
 	r.Use(p)
 
@@ -43,8 +46,8 @@ func main() {
 		time.RFC3339,
 		useUTC,
 		"requestID",
-		[]byte("uber-trace-id"),
-		[]byte("tracing-context"),
+		[]byte("uber-trace-id"), // where jaeger might have put the trace id
+		[]byte("RequestID"),     // where the trace ID might already be populated in the headers
 		ginlogrus.WithAggregateLogging(true)))
 
 	r.GET("/", func(c *gin.Context) {
@@ -60,9 +63,27 @@ func main() {
 		logger.Error("aggregated error entry with new-comment field")
 
 		logrus.Info("this will NOT be aggregated and will be logged immediately")
+		span := newSpanFromContext(c, "sleep-span")
+		defer span.Finish()
 		time.Sleep(2 * time.Second) // sleep so it's easy to see the timing of entries in the log
 		c.JSON(200, "Hello world!")
 	})
 
 	r.Run(":29090")
+}
+
+func newSpanFromContext(c *gin.Context, operationName string) opentracing.Span {
+	parentSpan, _ := c.Get("tracing-context")
+	options := []opentracing.StartSpanOption{
+		opentracing.Tag{Key: ext.SpanKindRPCServer.Key, Value: ext.SpanKindRPCServer.Value},
+		opentracing.Tag{Key: string(ext.HTTPMethod), Value: c.Request.Method},
+		opentracing.Tag{Key: string(ext.HTTPUrl), Value: c.Request.URL.Path},
+		opentracing.Tag{Key: "current-goroutines", Value: runtime.NumGoroutine()},
+	}
+
+	if parentSpan != nil {
+		options = append(options, opentracing.ChildOf(parentSpan.(opentracing.Span).Context()))
+	}
+
+	return opentracing.StartSpan(operationName, options...)
 }
