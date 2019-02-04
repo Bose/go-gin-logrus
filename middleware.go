@@ -11,6 +11,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// ContextTraceIDField - used to find the trace id in the gin.Context - optional
+var ContextTraceIDField string
+
 type loggerEntryWithFields interface {
 	WithFields(fields logrus.Fields) *logrus.Entry
 }
@@ -42,7 +45,9 @@ func WithTracing(
 	for _, o := range opt {
 		o(&opts)
 	}
-
+	if contextTraceIDField != nil {
+		ContextTraceIDField = string(contextTraceIDField)
+	}
 	return func(c *gin.Context) {
 		var aggregateLoggingBuff strings.Builder
 		aggregateRequestLogger := &logrus.Logger{
@@ -77,7 +82,7 @@ func WithTracing(
 		}
 		// check a user defined context field
 		if len(requestID) == 0 && contextTraceIDField != nil {
-			if id, ok := c.Get(string(contextTraceIDField)); ok {
+			if id, ok := c.Get(string(ContextTraceIDField)); ok {
 				requestID = id.(string)
 			}
 		}
@@ -161,15 +166,36 @@ func GetCtxLogger(c *gin.Context) *logrus.Entry {
 
 // CxtRequestID - set a logrus Field entry with the tracing ID for the request
 func CxtRequestID(c *gin.Context) string {
-	requestID := c.Request.Header.Get("uber-trace-id")
-	if len(requestID) == 0 {
-		id, found := c.Get("RequestID")
-		if found == true {
-			return id.(string)
-		}
-		requestID = uuid.New().String()
-		fmt.Println(requestID)
+	// already setup, so we're done
+	if id, found := c.Get("RequestID"); found == true {
+		return id.(string)
 	}
+
+	// see if we're using github.com/Bose/go-gin-opentracing which will set a span in "tracing-context"
+	if s, foundSpan := c.Get("tracing-context"); foundSpan {
+		span := s.(opentracing.Span)
+		requestID := fmt.Sprintf("%v", span)
+		c.Set("RequestID", requestID)
+		return requestID
+	}
+
+	// some other process might have stuck it in a header
+	if len(ContextTraceIDField) != 0 {
+		if s, ok := c.Get(ContextTraceIDField); ok {
+			span := s.(opentracing.Span)
+			requestID := fmt.Sprintf("%v", span)
+			c.Set("RequestID", requestID)
+			return requestID
+		}
+	}
+
+	if requestID := c.Request.Header.Get("uber-trace-id"); len(requestID) != 0 {
+		c.Set("RequestID", requestID)
+		return requestID
+	}
+
+	// finally, just create a fake request id...
+	requestID := uuid.New().String()
 	c.Set("RequestID", requestID)
 	return requestID
 }
