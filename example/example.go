@@ -27,7 +27,10 @@ func main() {
 		hostName = "unknown"
 	}
 
-	tracer, reporter, closer, err := ginopentracing.InitTracing(fmt.Sprintf("go-gin-logrus-example::%s", hostName), "localhost:5775", ginopentracing.WithEnableInfoLog(true))
+	tracer, reporter, closer, err := ginopentracing.InitTracing(
+		fmt.Sprintf("go-gin-logrus-example::%s", hostName), // service name for the traces
+		"localhost:5775",                        // where to send the spans
+		ginopentracing.WithEnableInfoLog(false)) // WithEnableLogInfo(false) will not log info on every span sent... if set to true it will log and they won't be aggregated
 	if err != nil {
 		panic("unable to init tracing")
 	}
@@ -51,21 +54,22 @@ func main() {
 		ginlogrus.WithAggregateLogging(true)))
 
 	r.GET("/", func(c *gin.Context) {
+		ginlogrus.SetCtxLoggerHeader(c, "new-header-index-name", "this is how you set new header level data")
+
 		logger := ginlogrus.GetCtxLogger(c) // will get a logger with the aggregate Logger set if it's enabled - handy if you've already set fields for the request
 		logger.Info("this will be aggregated into one write with the access log and will show up when the request is completed")
 
 		// add some new fields to the existing logger
-		logger = ginlogrus.SetCtxLogger(c, logger.WithFields(logrus.Fields{"comment": "this is an aggregated log entry"}))
+		logger = ginlogrus.SetCtxLogger(c, logger.WithFields(logrus.Fields{"comment": "this is an aggregated log entry with initial comment field"}))
 		logger.Debug("aggregated entry with new comment field")
 
 		// replace existing logger fields with new ones (notice it's logrus.WithFields())
-		logger = ginlogrus.SetCtxLogger(c, logrus.WithFields(logrus.Fields{"new-comment": "this is an aggregated log entry"}))
+		logger = ginlogrus.SetCtxLogger(c, logrus.WithFields(logrus.Fields{"new-comment": "this is an aggregated log entry with reset comment field"}))
 		logger.Error("aggregated error entry with new-comment field")
 
 		logrus.Info("this will NOT be aggregated and will be logged immediately")
 		span := newSpanFromContext(c, "sleep-span")
 		defer span.Finish()
-		time.Sleep(2 * time.Second) // sleep so it's easy to see the timing of entries in the log
 		c.JSON(200, "Hello world!")
 	})
 

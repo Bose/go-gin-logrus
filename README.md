@@ -31,50 +31,40 @@ docker run -d -e \
   ```
 ## Usage
 ```
-# example aggregated log entry for a request
+# example aggregated log entry for a request with UseBanner == true
 {
+  "new-header-index-name": "this is how you set new header level data",
+  "request-summary-info": {
+    "comment": "",
+    "ip": "::1",
+    "latency": "     98.217µs",
+    "method": "GET",
+    "path": "/",
+    "requestID": "4b4fb22ef51cc540:4b4fb22ef51cc540:0:1",
+    "status": 200,
+    "time": "2019-02-06T13:24:06Z",
+    "user-agent": "curl/7.54.0"
+  },
   "entries": [
     {
       "level": "info",
-      "method": "GET",
       "msg": "this will be aggregated into one write with the access log and will show up when the request is completed",
-      "path": "/",
-      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
-      "time": "2019-02-05T21:01:05-05:00"
+      "time": "2019-02-06T08:24:06-05:00"
     },
     {
-      "comment": "this is an aggregated log entry",
+      "comment": "this is an aggregated log entry with initial comment field",
       "level": "debug",
-      "method": "GET",
       "msg": "aggregated entry with new comment field",
-      "path": "/",
-      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
-      "time": "2019-02-05T21:01:05-05:00"
+      "time": "2019-02-06T08:24:06-05:00"
     },
     {
       "level": "error",
-      "method": "GET",
       "msg": "aggregated error entry with new-comment field",
-      "new-comment": "this is an aggregated log entry",
-      "path": "/",
-      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
-      "time": "2019-02-05T21:01:05-05:00"
-    },
-    {
-      "comment": "",
-      "fields.time": "2019-02-06T02:01:07Z",
-      "ip": "::1",
-      "latency": " 2.002710403s",
-      "level": "info",
-      "method": "GET",
-      "msg": "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------",
-      "path": "/",
-      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
-      "status": 200,
-      "time": "2019-02-05T21:01:07-05:00",
-      "user-agent": "curl/7.54.0"
+      "new-comment": "this is an aggregated log entry with reset comment field",
+      "time": "2019-02-06T08:24:06-05:00"
     }
-  ]
+  ],
+  "banner": "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
 }
 
 ```
@@ -109,7 +99,10 @@ func main() {
 		hostName = "unknown"
 	}
 
-	tracer, reporter, closer, err := ginopentracing.InitTracing(fmt.Sprintf("go-gin-logrus-example::%s", hostName), "localhost:5775", ginopentracing.WithEnableInfoLog(true))
+	tracer, reporter, closer, err := ginopentracing.InitTracing(
+		fmt.Sprintf("go-gin-logrus-example::%s", hostName), // service name for the traces
+		"localhost:5775",                        // where to send the spans
+		ginopentracing.WithEnableInfoLog(false)) // WithEnableLogInfo(false) will not log info on every span sent... if set to true it will log and they won't be aggregated
 	if err != nil {
 		panic("unable to init tracing")
 	}
@@ -133,21 +126,22 @@ func main() {
 		ginlogrus.WithAggregateLogging(true)))
 
 	r.GET("/", func(c *gin.Context) {
+		ginlogrus.SetCtxLoggerHeader(c, "new-header-index-name", "this is how you set new header level data")
+
 		logger := ginlogrus.GetCtxLogger(c) // will get a logger with the aggregate Logger set if it's enabled - handy if you've already set fields for the request
 		logger.Info("this will be aggregated into one write with the access log and will show up when the request is completed")
 
 		// add some new fields to the existing logger
-		logger = ginlogrus.SetCtxLogger(c, logger.WithFields(logrus.Fields{"comment": "this is an aggregated log entry"}))
+		logger = ginlogrus.SetCtxLogger(c, logger.WithFields(logrus.Fields{"comment": "this is an aggregated log entry with initial comment field"}))
 		logger.Debug("aggregated entry with new comment field")
 
 		// replace existing logger fields with new ones (notice it's logrus.WithFields())
-		logger = ginlogrus.SetCtxLogger(c, logrus.WithFields(logrus.Fields{"new-comment": "this is an aggregated log entry"}))
+		logger = ginlogrus.SetCtxLogger(c, logrus.WithFields(logrus.Fields{"new-comment": "this is an aggregated log entry with reset comment field"}))
 		logger.Error("aggregated error entry with new-comment field")
 
 		logrus.Info("this will NOT be aggregated and will be logged immediately")
 		span := newSpanFromContext(c, "sleep-span")
 		defer span.Finish()
-		time.Sleep(2 * time.Second) // sleep so it's easy to see the timing of entries in the log
 		c.JSON(200, "Hello world!")
 	})
 
@@ -169,6 +163,7 @@ func newSpanFromContext(c *gin.Context, operationName string) opentracing.Span {
 
 	return opentracing.StartSpan(operationName, options...)
 }
+
 
 ```
 
