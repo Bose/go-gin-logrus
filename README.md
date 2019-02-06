@@ -31,21 +31,52 @@ docker run -d -e \
   ```
 ## Usage
 ```
-# example log entry for a gin request
+# example aggregated log entry for a request
 {
-  "comment": "",
-  "fields.time": "2018-07-05T00:08:01Z",
-  "ip": "::1",
-  "latency": "     13.352µs",
-  "level": "info",
-  "method": "GET",
-  "msg": "",
-  "path": "/",
-  "status": 200,
-  "time": "2018-07-04T20:08:01-04:00",
-  "traceIDField": "5035b28a16cd3e8e:5035b28a16cd3e8e:0:1",
-  "user-agent": "curl/7.54.0"
+  "entries": [
+    {
+      "level": "info",
+      "method": "GET",
+      "msg": "this will be aggregated into one write with the access log and will show up when the request is completed",
+      "path": "/",
+      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
+      "time": "2019-02-05T21:01:05-05:00"
+    },
+    {
+      "comment": "this is an aggregated log entry",
+      "level": "debug",
+      "method": "GET",
+      "msg": "aggregated entry with new comment field",
+      "path": "/",
+      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
+      "time": "2019-02-05T21:01:05-05:00"
+    },
+    {
+      "level": "error",
+      "method": "GET",
+      "msg": "aggregated error entry with new-comment field",
+      "new-comment": "this is an aggregated log entry",
+      "path": "/",
+      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
+      "time": "2019-02-05T21:01:05-05:00"
+    },
+    {
+      "comment": "",
+      "fields.time": "2019-02-06T02:01:07Z",
+      "ip": "::1",
+      "latency": " 2.002710403s",
+      "level": "info",
+      "method": "GET",
+      "msg": "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------",
+      "path": "/",
+      "requestID": "7a94e88fce04a760:7a94e88fce04a760:0:1",
+      "status": 200,
+      "time": "2019-02-05T21:01:07-05:00",
+      "user-agent": "curl/7.54.0"
+    }
+  ]
 }
+
 ```
 
 ```go
