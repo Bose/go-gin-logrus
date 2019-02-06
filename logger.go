@@ -9,18 +9,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func SetCtxLoggerHeader(c *gin.Context, name string, data interface{}) {
+	logger := GetCtxLogger(c)
+	logger.Logger.Out.(*LogBuffer).Header[name] = data
+}
+
 // SetCtxLogger - set the *logrus.Entry for this request in the gin.Context so it can be used throughout the request
 func SetCtxLogger(c *gin.Context, logger *logrus.Entry) *logrus.Entry {
 	log, found := c.Get("aggregate-logger")
 	if found {
 		logger.Logger = log.(*logrus.Logger)
 	}
-	// make sure the original fields for the request are still added
-	logger = logger.WithFields(logrus.Fields{
-		"requestID": CxtRequestID(c),
-		"method":    c.Request.Method,
-		"path":      c.Request.URL.Path})
-
+	logger = logger.WithFields(logrus.Fields{})
 	c.Set("ctxLogger", logger)
 	return logger
 }
@@ -31,11 +31,7 @@ func GetCtxLogger(c *gin.Context) *logrus.Entry {
 	if ok {
 		return l.(*logrus.Entry)
 	}
-	logger := logrus.WithFields(logrus.Fields{
-		"requestID": CxtRequestID(c),
-		"method":    c.Request.Method,
-		"path":      c.Request.URL.Path,
-	})
+	logger := logrus.WithFields(logrus.Fields{})
 	log, found := c.Get("aggregate-logger")
 	if found {
 		logger.Logger = log.(*logrus.Logger)
