@@ -48,13 +48,16 @@ func WithTracing(
 	}
 	return func(c *gin.Context) {
 		// var aggregateLoggingBuff strings.Builder
-		var aggregateLoggingBuff logBuffer
+		// var aggregateLoggingBuff logBuffer
+		aggregateLoggingBuff := LogBuffer{AddBanner: useBanner}
 		aggregateRequestLogger := &logrus.Logger{
 			Out:       &aggregateLoggingBuff,
 			Formatter: new(logrus.JSONFormatter),
 			Hooks:     make(logrus.LevelHooks),
 			Level:     logrus.DebugLevel,
 		}
+
+		aggregateLoggingBuff.Header = map[string]interface{}{}
 
 		start := time.Now()
 		// some evil middlewares modify this values
@@ -92,7 +95,7 @@ func WithTracing(
 
 		comment := c.Errors.ByType(gin.ErrorTypePrivate).String()
 
-		entry := logger.WithFields(logrus.Fields{
+		fields := logrus.Fields{
 			logrusFieldNameForTraceID: requestID,
 			"status":                  c.Writer.Status(),
 			"method":                  c.Request.Method,
@@ -102,13 +105,14 @@ func WithTracing(
 			"user-agent":              c.Request.UserAgent(),
 			"time":                    end.Format(timeFormat),
 			"comment":                 comment,
-		})
-
+		}
 		if len(c.Errors) > 0 {
+			entry := logger.WithFields(fields)
 			// Append error field if this is an erroneous request.
 			entry.Error(c.Errors.String())
 		} else {
 			if gin.Mode() != gin.ReleaseMode && !opts.aggregateLogging {
+				entry := logger.WithFields(fields)
 				if useBanner {
 					entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
 				} else {
@@ -116,12 +120,10 @@ func WithTracing(
 				}
 			}
 			if opts.aggregateLogging {
-				entry.Logger = aggregateRequestLogger // which uses aggregateLoggingBuff for it's io.Writer
-				if useBanner {
-					entry.Info("[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------")
-				} else {
-					entry.Info()
-				}
+				aggregateLoggingBuff.Header["request-summary-info"] = fields
+				// if useBanner {
+				// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
+				// }
 				fmt.Printf(aggregateLoggingBuff.String())
 			}
 		}
