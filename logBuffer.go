@@ -29,7 +29,7 @@ func (b *LogBuffer) String() string {
 		if err != nil {
 			fmt.Println("Error encoding logBuffer JSON")
 		}
-		if len(hdr) > 0 {
+		if len(bytes.TrimSpace(hdr)) > 0 {
 			str.Write(hdr[1 : len(hdr)-1])
 			str.WriteString(",")
 		}
