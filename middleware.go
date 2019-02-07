@@ -74,7 +74,6 @@ func WithTracing(
 		if utc {
 			end = end.UTC()
 		}
-		late := fmt.Sprintf("%13v", latency)
 
 		var requestID string
 		// see if we're using github.com/Bose/go-gin-opentracing which will set a span in "tracing-context"
@@ -101,7 +100,7 @@ func WithTracing(
 			"method":                  c.Request.Method,
 			"path":                    path,
 			"ip":                      c.ClientIP(),
-			"latency":                 late,
+			"latency":                 float64(latency) / float64(time.Millisecond),
 			"user-agent":              c.Request.UserAgent(),
 			"time":                    end.Format(timeFormat),
 			"comment":                 comment,
