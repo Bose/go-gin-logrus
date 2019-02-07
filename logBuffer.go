@@ -29,10 +29,8 @@ func (b *LogBuffer) String() string {
 		if err != nil {
 			fmt.Println("Error encoding logBuffer JSON")
 		}
-		if len(bytes.TrimSpace(hdr)) > 0 {
-			str.Write(hdr[1 : len(hdr)-1])
-			str.WriteString(",")
-		}
+		str.Write(hdr[1 : len(hdr)-1])
+		str.WriteString(",")
 	}
 	str.WriteString("\"entries\":[" + strings.TrimSuffix(b.Buff.String(), ",") + "]")
 	if b.AddBanner {
