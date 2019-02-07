@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// StringWriter - implement io.Writer inferface to append to a string
+// LogBuffer - implement io.Writer inferface to append to a string
 type LogBuffer struct {
 	Buff      strings.Builder
 	Header    map[string]interface{}
