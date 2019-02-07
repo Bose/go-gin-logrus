@@ -9,9 +9,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// SetCtxLoggerHeader - if aggregate logging, set header info... otherwise just info log the data
 func SetCtxLoggerHeader(c *gin.Context, name string, data interface{}) {
 	logger := GetCtxLogger(c)
-	logger.Logger.Out.(*LogBuffer).Header[name] = data
+	_, found := c.Get("aggregate-logger")
+	if found {
+		logger.Logger.Out.(*LogBuffer).Header[name] = data
+	}
+	if !found {
+		logger.Infof("%s: %v", name, data)
+	}
 }
 
 // SetCtxLogger - set the *logrus.Entry for this request in the gin.Context so it can be used throughout the request
@@ -19,8 +26,15 @@ func SetCtxLogger(c *gin.Context, logger *logrus.Entry) *logrus.Entry {
 	log, found := c.Get("aggregate-logger")
 	if found {
 		logger.Logger = log.(*logrus.Logger)
+		logger = logger.WithFields(logrus.Fields{}) // no need to add additional fields when aggregate logging
 	}
-	logger = logger.WithFields(logrus.Fields{})
+	if !found {
+		// not aggregate logging, so make sure  to add some needed fields
+		logger = logger.WithFields(logrus.Fields{
+			"requestID": CxtRequestID(c),
+			"method":    c.Request.Method,
+			"path":      c.Request.URL.Path})
+	}
 	c.Set("ctxLogger", logger)
 	return logger
 }
@@ -31,10 +45,19 @@ func GetCtxLogger(c *gin.Context) *logrus.Entry {
 	if ok {
 		return l.(*logrus.Entry)
 	}
-	logger := logrus.WithFields(logrus.Fields{})
+	var logger *logrus.Entry
 	log, found := c.Get("aggregate-logger")
 	if found {
+		logger = logrus.WithFields(logrus.Fields{})
 		logger.Logger = log.(*logrus.Logger)
+	}
+	if !found {
+		// not aggregate logging, so make sure  to add some needed fields
+		logger = logrus.WithFields(logrus.Fields{
+			"requestID": CxtRequestID(c),
+			"method":    c.Request.Method,
+			"path":      c.Request.URL.Path,
+		})
 	}
 	c.Set("ctxLogger", logger)
 	return logger
