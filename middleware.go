@@ -100,7 +100,7 @@ func WithTracing(
 			"method":                  c.Request.Method,
 			"path":                    path,
 			"ip":                      c.ClientIP(),
-			"latency":                 float64(latency) / float64(time.Millisecond),
+			"latency-ms":              float64(latency) / float64(time.Millisecond),
 			"user-agent":              c.Request.UserAgent(),
 			"time":                    end.Format(timeFormat),
 			"comment":                 comment,
