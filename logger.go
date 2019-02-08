@@ -111,3 +111,29 @@ func GetCxtRequestID(c *gin.Context) string {
 	}
 	return "unknown"
 }
+
+// NewBuffer - create a new aggregate logging buffer for the *logrus.Entry , which can be flushed by the consumer
+// how-to, when to use this:
+// 		the request level log entry is written when the request is over, so you need this thing to
+// 		write go routine logs that complete AFTER the request is completed.
+// example:
+// go func() {
+// 		buff := NewBuffer(logger) // logger is an existing *logrus.Entry
+// 		// do somem work here and write some logs via the logger.  Like logger.Info("hi mom! I'm a go routine that finished after the request")
+// 		fmt.Printf(buff.String()) // this will write the aggregated buffered logs to stdout
+// }()
+//
+func NewBuffer(l *logrus.Entry) *LogBuffer {
+	buff := LogBuffer{}
+	if l, ok := l.Logger.Out.(*LogBuffer); ok {
+		buff.Header = l.Header
+	}
+	// buff.Header = l.Logger.Out.(*ginlogrus.LogBuffer).Header
+	l.Logger = &logrus.Logger{
+		Out:       &buff,
+		Formatter: new(logrus.JSONFormatter),
+		Hooks:     make(logrus.LevelHooks),
+		Level:     logrus.DebugLevel,
+	}
+	return &buff
+}
