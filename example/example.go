@@ -69,7 +69,16 @@ func main() {
 
 		logrus.Info("this will NOT be aggregated and will be logged immediately")
 		span := newSpanFromContext(c, "sleep-span")
-		defer span.Finish()
+		defer span.Finish() // this will get logged because tracing was setup with ginopentracing.WithEnableInfoLog(true)
+
+		go func() {
+			// need a NewBuffer for aggregate logging of this goroutine (since the req will be done long before this thing finishes)
+			// it will inherit header info from the existing request
+			buff := ginlogrus.NewBuffer(logger)
+			time.Sleep(1 * time.Second)
+			logger.Info("Hi from a goroutine completing after the request")
+			fmt.Printf(buff.String())
+		}()
 		c.JSON(200, "Hello world!")
 	})
 
