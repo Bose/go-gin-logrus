@@ -1,6 +1,6 @@
 # go-gin-logrus
 [![](https://godoc.org/github.com/Bose/go-gin-logrus?status.svg)](https://godoc.org/github.com/Bose/go-gin-logrus)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Bose/go-gin-logrus)](https://goreportcard.com/report/github.com/go-gin-logrus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Bose/go-gin-logrus)](https://goreportcard.com/report/github.com/Bose/go-gin-logrus)
 [![Release](https://img.shields.io/github/release/Bose/go-gin-logrus.svg?style=flat-square)](https://Bose/go-gin-logrus/releases)
 
 Gin Web Framework Open Tracing middleware.
