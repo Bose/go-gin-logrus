@@ -129,6 +129,7 @@ func NewBuffer(l *logrus.Entry) *LogBuffer {
 	buff := NewLogBuffer()
 	if l, ok := l.Logger.Out.(*LogBuffer); ok {
 		CopyHeader(&buff, l)
+		buff.AddBanner = l.AddBanner
 	}
 	// buff.Header = l.Logger.Out.(*ginlogrus.LogBuffer).Header
 	l.Logger = &logrus.Logger{
