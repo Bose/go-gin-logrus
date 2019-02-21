@@ -1,5 +1,7 @@
 # go-gin-logrus
-[![](https://godoc.org/github.com/Bose/go-gin-logrus?status.svg)](https://godoc.org/github.com/Bose/go-gin-logrus) 
+[![](https://godoc.org/github.com/Bose/go-gin-logrus?status.svg)](https://godoc.org/github.com/Bose/go-gin-logrus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Bose/go-gin-logrus)](https://goreportcard.com/report/github.com/Bose/go-gin-logrus)
+[![Release](https://img.shields.io/github/release/Bose/go-gin-logrus.svg?style=flat-square)](https://Bose/go-gin-logrus/releases)
 
 Gin Web Framework Open Tracing middleware.
 
@@ -141,7 +143,16 @@ func main() {
 
 		logrus.Info("this will NOT be aggregated and will be logged immediately")
 		span := newSpanFromContext(c, "sleep-span")
-		defer span.Finish()
+		defer span.Finish() // this will get logged because tracing was setup with ginopentracing.WithEnableInfoLog(true)
+
+		go func() {
+			// need a NewBuffer for aggregate logging of this goroutine (since the req will be done long before this thing finishes)
+			// it will inherit header info from the existing request
+			buff := ginlogrus.NewBuffer(logger)
+			time.Sleep(1 * time.Second)
+			logger.Info("Hi from a goroutine completing after the request")
+			fmt.Printf(buff.String())
+		}()
 		c.JSON(200, "Hello world!")
 	})
 

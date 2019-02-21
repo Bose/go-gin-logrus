@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// SetCtxLoggerHeader - if aggregate logging, set header info... otherwise just info log the data
+// SetCtxLoggerHeader - if aggregate logging, add header info... otherwise just info log the data passed
 func SetCtxLoggerHeader(c *gin.Context, name string, data interface{}) {
 	logger := GetCtxLogger(c)
 	_, found := c.Get("aggregate-logger")
@@ -22,7 +22,7 @@ func SetCtxLoggerHeader(c *gin.Context, name string, data interface{}) {
 	}
 }
 
-// SetCtxLogger - set the *logrus.Entry for this request in the gin.Context so it can be used throughout the request
+// SetCtxLogger - used when you want to set the *logrus.Entry with new logrus.WithFields{} for this request in the gin.Context so it can be used going forward for the request
 func SetCtxLogger(c *gin.Context, logger *logrus.Entry) *logrus.Entry {
 	log, found := c.Get("aggregate-logger")
 	if found {
@@ -64,7 +64,8 @@ func GetCtxLogger(c *gin.Context) *logrus.Entry {
 	return logger
 }
 
-// CxtRequestID - set a logrus Field entry with the tracing ID for the request
+// CxtRequestID - if not already set, then add logrus Field to the entry with the tracing ID for the request.
+// then return the trace/request id
 func CxtRequestID(c *gin.Context) string {
 	// already setup, so we're done
 	if id, found := c.Get("RequestID"); found == true {
