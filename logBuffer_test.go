@@ -15,8 +15,11 @@ func TestLogBuffer_String(t *testing.T) {
 		contains string
 	}{
 		{
-			name:     "one",
-			buff:     LogBuffer{},
+			name: "hey",
+			buff: LogBuffer{Header: map[string]interface{}{
+				"id1": "val1",
+				"id2": "val2",
+			}, AddBanner: true},
 			write:    []byte("hey"),
 			contains: "hey",
 		},
