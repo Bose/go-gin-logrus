@@ -72,6 +72,7 @@ func (b *LogBuffer) GetAllHeaders() (map[string]interface{}, error) {
 func CopyHeader(dst *LogBuffer, src *LogBuffer) {
 	src.headerMU.Lock()
 	dup, err := copystructure.Copy(src.header)
+	dupBanner := src.AddBanner
 	src.headerMU.Unlock()
 
 	dst.headerMU.Lock()
@@ -80,6 +81,7 @@ func CopyHeader(dst *LogBuffer, src *LogBuffer) {
 	} else {
 		dst.header = dup.(map[string]interface{})
 	}
+	dst.AddBanner = dupBanner
 	dst.headerMU.Unlock()
 }
 
