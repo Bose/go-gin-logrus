@@ -65,3 +65,53 @@ func TestNewLogBuffer(t *testing.T) {
 		})
 	}
 }
+
+func TestLogBuffer_StoreHeader_DeleteHeader_GetHeader_GetAllHeaders_CopyHeader(t *testing.T) {
+	tests := []struct {
+		name     string
+		buff     LogBuffer
+		k        string
+		v        interface{}
+		contains string
+	}{
+		{
+			name:     "1",
+			buff:     NewLogBuffer(WithBanner(true)),
+			k:        "test-hdr",
+			v:        "test-value",
+			contains: "test-value",
+		},
+		{
+			name:     "2",
+			buff:     NewLogBuffer(WithBanner(true)),
+			k:        "test-hdr-2",
+			v:        true,
+			contains: "test-hdr-2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.buff.StoreHeader(tt.k, tt.v)
+			if !strings.Contains(tt.buff.String(), tt.contains) {
+				t.Errorf("expected %v and got %v", tt.contains, tt.buff.String())
+			}
+			if got, _ := tt.buff.GetHeader(tt.k); !reflect.DeepEqual(got, tt.v) {
+				t.Errorf("GetHeader() = %v, want %v", got, tt.v)
+			}
+			got, _ := tt.buff.GetAllHeaders()
+			if reflect.DeepEqual(got, tt.v) {
+				t.Errorf("GetAllHeaders() = %v, want %v", got, tt.v)
+			}
+			newBuff := NewLogBuffer()
+			CopyHeader(&newBuff, &tt.buff)
+			if reflect.DeepEqual(newBuff, tt.buff) != true {
+				t.Errorf("CopyHeader() = %v, want %v", newBuff, tt.buff)
+			}
+			tt.buff.DeleteHeader(tt.k)
+			if strings.Contains(tt.buff.String(), tt.contains) {
+				t.Errorf("expected %v to be deleted and got %v", tt.contains, tt.buff.String())
+			}
+
+		})
+	}
+}
