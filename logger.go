@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/mitchellh/copystructure"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
@@ -136,4 +137,24 @@ func NewBuffer(l *logrus.Entry) *LogBuffer {
 		Level:     logrus.DebugLevel,
 	}
 	return &buff
+}
+
+// CopyLoggerWithNewBuffer - copies info out of an existing logger and creates a new logger and aggregate logging buffer
+// this is NOT a concurrent safe operation.  The logger's header (map) is iterated over, so you cannot be writing to the
+// logger's header at the same time
+func CopyLoggerWithNewBuffer(logger *logrus.Entry) (*logrus.Entry, *LogBuffer) {
+	newLogger := logrus.WithFields(logrus.Fields{}) // create new buffer for post request logging
+	buff := NewBuffer(newLogger)
+	buff.AddBanner = true
+	if l, ok := logger.Logger.Out.(*LogBuffer); ok {
+		dup, err := copystructure.Copy(l.Header)
+		if err != nil {
+			buff.Header = map[string]interface{}{}
+		} else {
+			buff.Header = dup.(map[string]interface{})
+		}
+	} else {
+		buff.Header = map[string]interface{}{}
+	}
+	return newLogger, buff
 }
