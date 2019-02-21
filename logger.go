@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/mitchellh/copystructure"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
@@ -15,7 +14,7 @@ func SetCtxLoggerHeader(c *gin.Context, name string, data interface{}) {
 	logger := GetCtxLogger(c)
 	_, found := c.Get("aggregate-logger")
 	if found {
-		logger.Logger.Out.(*LogBuffer).Header[name] = data
+		logger.Logger.Out.(*LogBuffer).StoreHeader(name, data)
 	}
 	if !found {
 		logger.Infof("%s: %v", name, data)
@@ -127,9 +126,10 @@ func GetCxtRequestID(c *gin.Context) string {
 // }()
 //
 func NewBuffer(l *logrus.Entry) *LogBuffer {
-	buff := LogBuffer{}
+	buff := NewLogBuffer()
 	if l, ok := l.Logger.Out.(*LogBuffer); ok {
-		buff.Header = l.Header
+		CopyHeader(&buff, l)
+		buff.AddBanner = l.AddBanner
 	}
 	// buff.Header = l.Logger.Out.(*ginlogrus.LogBuffer).Header
 	l.Logger = &logrus.Logger{
@@ -139,26 +139,4 @@ func NewBuffer(l *logrus.Entry) *LogBuffer {
 		Level:     logrus.DebugLevel,
 	}
 	return &buff
-}
-
-// CopyLoggerWithNewBuffer - copies info out of an existing logger and creates a new logger and aggregate logging buffer
-// this is NOT a concurrent safe operation.  The logger's header (map) is iterated over, so you cannot be writing to the
-// logger's header at the same time
-//
-// you would use this when you want to keep the Headers separate.
-func CopyLoggerWithNewBuffer(logger *logrus.Entry) (*logrus.Entry, *LogBuffer) {
-	newLogger := logrus.WithFields(logrus.Fields{}) // create new buffer for post request logging
-	buff := NewBuffer(newLogger)
-	buff.AddBanner = true
-	if l, ok := logger.Logger.Out.(*LogBuffer); ok {
-		dup, err := copystructure.Copy(l.Header)
-		if err != nil {
-			buff.Header = map[string]interface{}{}
-		} else {
-			buff.Header = dup.(map[string]interface{})
-		}
-	} else {
-		buff.Header = map[string]interface{}{}
-	}
-	return newLogger, buff
 }
