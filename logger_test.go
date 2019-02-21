@@ -1,9 +1,8 @@
 package ginlogrus
 
 import (
-	"fmt"
-	"testing"
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -53,8 +52,7 @@ func getTestContext(hdr string, v string, withAggregateLogger bool) *gin.Context
 	}
 	return c
 }
-  
-  
+
 func TestCopyLoggerWithNewBuffer(t *testing.T) {
 	l := logrus.WithFields(logrus.Fields{}) // create new buffer for post request logging
 	buff := NewBuffer(l)
@@ -74,4 +72,3 @@ func TestCopyLoggerWithNewBuffer(t *testing.T) {
 	fmt.Printf(newBuff.String())
 
 }
-
