@@ -2,7 +2,6 @@ package ginlogrus
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
