@@ -14,7 +14,7 @@ func TestWithBanner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := defaultLogBufferOptions
+			opts := defaultLogBufferOptions()
 			f := WithBanner(tt.want)
 			f(&opts)
 			if opts.addBanner != tt.want {
@@ -35,7 +35,7 @@ func TestWithHeader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := defaultLogBufferOptions
+			opts := defaultLogBufferOptions()
 			f := WithHeader(tt.wantKey, tt.wantValue)
 			f(&opts)
 			if opts.withHeaders[tt.wantKey].(bool) != tt.wantValue {
