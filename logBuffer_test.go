@@ -31,7 +31,10 @@ func TestLogBuffer_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.buff.Write(tt.write)
+			_, err := tt.buff.Write(tt.write)
+			if err != nil {
+				t.Error("LogBuffer.String() Write error: ", err)
+			}
 			fmt.Println("buff == ", tt.buff.String())
 			if !strings.Contains(tt.buff.String(), tt.contains) {
 				t.Errorf("LogBuffer.String() = %v, want %v", tt.buff.String(), tt.contains)
@@ -115,3 +118,49 @@ func TestLogBuffer_StoreHeader_DeleteHeader_GetHeader_GetAllHeaders_CopyHeader(t
 		})
 	}
 }
+
+func TestLogBuffer_Write(t *testing.T) {
+	tests := []struct {
+		name    string
+		b       LogBuffer
+		data    []byte
+		wantN   int
+		wantErr bool
+	}{
+		{
+			name:    "1-fail",
+			b:       NewLogBuffer(WithMaxSize(1)),
+			data:    []byte("test write"),
+			wantN:   0,
+			wantErr: true,
+		},
+		{
+			name:    "2-success",
+			b:       NewLogBuffer(WithMaxSize(100)),
+			data:    []byte("test write"),
+			wantN:   len("test write") + 1,
+			wantErr: false,
+		},
+		{
+			name:    "3-fail",
+			b:       NewLogBuffer(WithMaxSize(100)),
+			data:    []byte(tooBigBuff),
+			wantN:   0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotN, err := tt.b.Write(tt.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LogBuffer.Write() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotN != tt.wantN {
+				t.Errorf("LogBuffer.Write() = %v, want %v", gotN, tt.wantN)
+			}
+		})
+	}
+}
+
+var tooBigBuff = strings.Repeat("#", DefaultLogBufferMaxSize) + "1"
