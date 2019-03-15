@@ -16,34 +16,38 @@ type LogBuffer struct {
 	header    map[string]interface{}
 	headerMU  *sync.RWMutex
 	AddBanner bool
+	MaxSize   uint
 }
 
 // NewLogBuffer - create a LogBuffer and initialize it
 func NewLogBuffer(opt ...LogBufferOption) LogBuffer {
-	opts := defaultLogBufferOptions
-	dup, _ := copystructure.Copy(defaultLogBufferOptions)
-	opts = dup.(logBufferOptions)
-	if opts.withHeaders == nil {
-		opts.withHeaders = make(map[string]interface{})
-	}
+	opts := logBufferOptions{maxSize: DefaultLogBufferMaxSize}
 	for _, o := range opt {
 		o(&opts)
 	}
 	return LogBuffer{
 		header:    opts.withHeaders,
 		headerMU:  &sync.RWMutex{},
-		AddBanner: opts.addBanner}
+		AddBanner: opts.addBanner,
+		MaxSize:   opts.maxSize,
+	}
 }
 
 // StoreHeader - store a header
 func (b *LogBuffer) StoreHeader(k string, v interface{}) {
 	b.headerMU.Lock()
+	if b.header == nil {
+		b.header = make(map[string]interface{})
+	}
 	b.header[k] = v
 	b.headerMU.Unlock()
 }
 
 // DeleteHeader - delete a header
 func (b *LogBuffer) DeleteHeader(k string) {
+	if b.header == nil {
+		return
+	}
 	b.headerMU.Lock()
 	delete(b.header, k)
 	b.headerMU.Unlock()
@@ -51,6 +55,9 @@ func (b *LogBuffer) DeleteHeader(k string) {
 
 // GetHeader - get a header
 func (b *LogBuffer) GetHeader(k string) (interface{}, bool) {
+	if b.header == nil {
+		return nil, false
+	}
 	b.headerMU.RLock()
 	r, ok := b.header[k]
 	b.headerMU.RUnlock()
@@ -88,6 +95,10 @@ func CopyHeader(dst *LogBuffer, src *LogBuffer) {
 // Write - simply append to the strings.Buffer but add a comma too
 func (b *LogBuffer) Write(data []byte) (n int, err error) {
 	newData := bytes.TrimSuffix(data, []byte("\n"))
+
+	if len(newData)+b.Buff.Len() > int(b.MaxSize) {
+		return 0, fmt.Errorf("write failed: buffer MaxSize = %d, current len = %d, attempted to write len = %d", b.MaxSize, b.Buff.Len(), len(newData))
+	}
 	return b.Buff.Write(append(newData, []byte(",")...))
 }
 
