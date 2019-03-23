@@ -102,15 +102,7 @@ func CxtRequestID(c *gin.Context) string {
 
 // GetCxtRequestID - dig the request ID out of the *logrus.Entry in the gin.Context
 func GetCxtRequestID(c *gin.Context) string {
-	l, ok := c.Get("ctxLogger")
-	if ok {
-		requestID, ok := l.(*logrus.Entry).Data["requestID"].(string)
-		if ok {
-			return requestID
-		}
-		return "unknown"
-	}
-	return "unknown"
+	return CxtRequestID(c)
 }
 
 // NewBuffer - create a new aggregate logging buffer for the *logrus.Entry , which can be flushed by the consumer

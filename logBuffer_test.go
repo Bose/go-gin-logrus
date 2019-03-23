@@ -52,12 +52,12 @@ func TestNewLogBuffer(t *testing.T) {
 		{
 			name: "one",
 			opt:  []LogBufferOption{WithBanner(true), WithHeader("1", true)},
-			want: LogBuffer{AddBanner: true, header: map[string]interface{}{"1": true}, headerMU: &sync.RWMutex{}},
+			want: LogBuffer{AddBanner: true, header: map[string]interface{}{"1": true}, headerMU: &sync.RWMutex{}, MaxSize: DefaultLogBufferMaxSize},
 		},
 		{
 			name: "two",
 			opt:  []LogBufferOption{WithHeader("1", "one"), WithHeader("2", true)},
-			want: LogBuffer{AddBanner: false, header: map[string]interface{}{"1": "one", "2": true}, headerMU: &sync.RWMutex{}},
+			want: LogBuffer{AddBanner: false, header: map[string]interface{}{"1": "one", "2": true}, headerMU: &sync.RWMutex{}, MaxSize: DefaultLogBufferMaxSize},
 		},
 	}
 	for _, tt := range tests {
