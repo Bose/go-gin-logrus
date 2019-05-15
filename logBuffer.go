@@ -97,7 +97,7 @@ func (b *LogBuffer) Write(data []byte) (n int, err error) {
 	newData := bytes.TrimSuffix(data, []byte("\n"))
 
 	if len(newData)+b.Buff.Len() > int(b.MaxSize) {
-		return 0, fmt.Errorf("write failed: buffer MaxSize = %d, current len = %d, attempted to write len = %d", b.MaxSize, b.Buff.Len(), len(newData))
+		return 0, fmt.Errorf("write failed: buffer MaxSize = %d, current len = %d, attempted to write len = %d, data == %s", b.MaxSize, b.Buff.Len(), len(newData), newData)
 	}
 	return b.Buff.Write(append(newData, []byte(",")...))
 }
