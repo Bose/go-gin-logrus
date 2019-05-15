@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"time"
@@ -82,7 +83,9 @@ func main() {
 		c.JSON(200, "Hello world!")
 	})
 
-	r.Run(":29090")
+	if err := r.Run(":29090"); err != nil {
+		log.Println("Run error: ", err)
+	}
 }
 
 func newSpanFromContext(c *gin.Context, operationName string) opentracing.Span {

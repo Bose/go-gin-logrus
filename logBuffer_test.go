@@ -152,6 +152,9 @@ func TestLogBuffer_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotN, err := tt.b.Write(tt.data)
+			if err != nil {
+				t.Log("LogBuffer.Write() error == ", err)
+			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LogBuffer.Write() error = %v, wantErr %v", err, tt.wantErr)
 				return
