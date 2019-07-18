@@ -45,25 +45,3 @@ func TestWithLogLevel(t *testing.T) {
 		})
 	}
 }
-
-func TestWithLogLevelAggregateLogging(t *testing.T) {
-	tests := []struct {
-		name string
-		aggregate bool
-		level logrus.Level
-	}{
-		{name: "info and true", aggregate: true, level: logrus.InfoLevel},
-		{name: "debug and true",  aggregate: true, level: logrus.DebugLevel},
-		{name: "error and false", level: logrus.ErrorLevel},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			opts := defaultOptions
-			f := WithLogLevelAggregateLogging(tt.aggregate, tt.level)
-			f(&opts)
-			if opts.logLevel != tt.level || opts.aggregateLogging != tt.aggregate {
-				t.Errorf("WithLogLevelAggregateLogging() = %v, want %v", opts, tt)
-			}
-		})
-	}
-}

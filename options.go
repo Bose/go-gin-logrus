@@ -28,11 +28,3 @@ func WithLogLevel(logLevel logrus.Level) Option {
 		o.logLevel = logLevel
 	}
 }
-
-// WithLogLevelAggregateLogging - define an Option func for passing in an optional logLevel and aggregateLogging
-func WithLogLevelAggregateLogging(a bool, logLevel logrus.Level) Option {
-	return func(o *options) {
-		o.aggregateLogging = a
-		o.logLevel = logLevel
-	}
-}
