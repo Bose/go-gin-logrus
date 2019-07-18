@@ -54,7 +54,7 @@ func WithTracing(
 			Out:       &aggregateLoggingBuff,
 			Formatter: new(logrus.JSONFormatter),
 			Hooks:     make(logrus.LevelHooks),
-			Level:     logrus.DebugLevel,
+			Level:     opts.logLevel,
 		}
 
 		start := time.Now()
