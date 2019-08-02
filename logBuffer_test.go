@@ -64,6 +64,11 @@ func TestNewLogBuffer(t *testing.T) {
 			opt:  []LogBufferOption{WithBanner(true), WithHeader("1", true), WithCustomBanner("custom")},
 			want: LogBuffer{AddBanner: true, header: map[string]interface{}{"1": true}, headerMU: &sync.RWMutex{}, MaxSize: DefaultLogBufferMaxSize, banner: ",\"banner\":\"custom\""},
 		},
+		{
+			name: "four",
+			opt:  []LogBufferOption{WithBanner(false), WithHeader("1", true)},
+			want: LogBuffer{AddBanner: false, header: map[string]interface{}{"1": true}, headerMU: &sync.RWMutex{}, MaxSize: DefaultLogBufferMaxSize, banner: ",\"banner\":\"[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------\""},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
