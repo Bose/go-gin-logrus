@@ -16,21 +16,24 @@ type LogBuffer struct {
 	header    map[string]interface{}
 	headerMU  *sync.RWMutex
 	AddBanner bool
+	banner    string
 	MaxSize   uint
 }
 
 // NewLogBuffer - create a LogBuffer and initialize it
 func NewLogBuffer(opt ...LogBufferOption) LogBuffer {
-	opts := logBufferOptions{maxSize: DefaultLogBufferMaxSize}
+	opts := defaultLogBufferOptions()
 	for _, o := range opt {
 		o(&opts)
 	}
-	return LogBuffer{
+	b := LogBuffer{
 		header:    opts.withHeaders,
 		headerMU:  &sync.RWMutex{},
 		AddBanner: opts.addBanner,
 		MaxSize:   opts.maxSize,
 	}
+	b.SetCustomBanner(opts.banner)
+	return b
 }
 
 // StoreHeader - store a header
@@ -118,8 +121,13 @@ func (b *LogBuffer) String() string {
 	}
 	str.WriteString("\"entries\":[" + strings.TrimSuffix(b.Buff.String(), ",") + "]")
 	if b.AddBanner {
-		str.WriteString(",\"banner\":\"[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------\"")
+		str.WriteString(b.banner)
 	}
 	str.WriteString("}\n")
 	return str.String()
+}
+
+// SetCustomBanner allows a custom banner to be set after the NewLogBuffer() has been used
+func (b *LogBuffer) SetCustomBanner(banner string) {
+	b.banner = fmt.Sprintf(",\"banner\":\"%s\"", banner)
 }
