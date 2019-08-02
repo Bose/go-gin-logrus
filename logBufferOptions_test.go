@@ -24,6 +24,26 @@ func TestWithBanner(t *testing.T) {
 	}
 }
 
+func TestWithCustomBanner(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{name: "custom", want: "CustomBanner"},
+		{name: "default", want: DefaultBanner},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := defaultLogBufferOptions()
+			f := WithCustomBanner(tt.want)
+			f(&opts)
+			if opts.banner != tt.want {
+				t.Errorf("WithBanner() = %v, want %v", opts.addBanner, tt.want)
+			}
+		})
+	}
+}
+
 func TestWithHeader(t *testing.T) {
 	tests := []struct {
 		name      string
