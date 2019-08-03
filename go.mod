@@ -5,6 +5,7 @@ require (
 	github.com/gin-gonic/gin v1.4.0
 	github.com/google/uuid v1.1.0
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/matryer/is v1.2.0
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect

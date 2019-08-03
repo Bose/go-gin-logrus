@@ -49,7 +49,7 @@ func WithTracing(
 	return func(c *gin.Context) {
 		// var aggregateLoggingBuff strings.Builder
 		// var aggregateLoggingBuff logBuffer
-		aggregateLoggingBuff := NewLogBuffer(WithBanner(true))
+		aggregateLoggingBuff := NewLogBuffer(WithBanner(useBanner), WithCustomBanner(opts.banner))
 		aggregateRequestLogger := &logrus.Logger{
 			Out:       &aggregateLoggingBuff,
 			Formatter: new(logrus.JSONFormatter),
@@ -121,7 +121,7 @@ func WithTracing(
 				// if useBanner {
 				// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
 				// }
-				fmt.Printf(aggregateLoggingBuff.String())
+				fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
 			}
 		}
 	}
