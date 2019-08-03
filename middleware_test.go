@@ -67,4 +67,25 @@ func TestBanner(t *testing.T) {
 	is.Equal(200, w.Code)
 	t.Log("this is the buffer: ", l)
 	is.True(strings.Contains(l.String(), "GinLogrusWithTracing"))
+
+	customBanner := "---- custom banner ----"
+	buff = ""
+	l = bytes.NewBufferString(buff)
+	r = gin.New()
+	r.Use(WithTracing(logrus.StandardLogger(),
+		true,
+		time.RFC3339,
+		true,
+		"requestID",
+		[]byte("uber-trace-id"), // where jaeger might have put the trace id
+		[]byte("RequestID"),     // where the trace ID might already be populated in the headers
+		WithLogCustomBanner(customBanner),
+		WithAggregateLogging(true),
+		WithWriter(l)))
+	r.GET("/", getHandler)
+	w = performRequest("GET", "/", r)
+	is.Equal(200, w.Code)
+	t.Log("this is the buffer: ", l)
+	is.True(strings.Contains(l.String(), customBanner))
+
 }

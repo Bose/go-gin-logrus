@@ -49,7 +49,7 @@ func WithTracing(
 	return func(c *gin.Context) {
 		// var aggregateLoggingBuff strings.Builder
 		// var aggregateLoggingBuff logBuffer
-		aggregateLoggingBuff := NewLogBuffer(WithBanner(useBanner))
+		aggregateLoggingBuff := NewLogBuffer(WithBanner(useBanner), WithCustomBanner(opts.banner))
 		aggregateRequestLogger := &logrus.Logger{
 			Out:       &aggregateLoggingBuff,
 			Formatter: new(logrus.JSONFormatter),
