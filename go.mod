@@ -1,4 +1,4 @@
-module github.com/Bose/go-gin-logrus/v2
+module github.com/Bose/go-gin-logrus
 
 require (
 	github.com/Bose/go-gin-opentracing v1.0.3
