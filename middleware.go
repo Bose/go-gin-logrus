@@ -49,15 +49,13 @@ func WithTracing(
 	return func(c *gin.Context) {
 		// var aggregateLoggingBuff strings.Builder
 		// var aggregateLoggingBuff logBuffer
-		aggregateLoggingBuff := LogBuffer{AddBanner: useBanner}
+		aggregateLoggingBuff := NewLogBuffer(WithBanner(useBanner), WithCustomBanner(opts.banner))
 		aggregateRequestLogger := &logrus.Logger{
 			Out:       &aggregateLoggingBuff,
 			Formatter: new(logrus.JSONFormatter),
 			Hooks:     make(logrus.LevelHooks),
-			Level:     logrus.DebugLevel,
+			Level:     opts.logLevel,
 		}
-
-		aggregateLoggingBuff.Header = map[string]interface{}{}
 
 		start := time.Now()
 		// some evil middlewares modify this values
@@ -119,11 +117,11 @@ func WithTracing(
 				}
 			}
 			if opts.aggregateLogging {
-				aggregateLoggingBuff.Header["request-summary-info"] = fields
+				aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
 				// if useBanner {
 				// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
 				// }
-				fmt.Printf(aggregateLoggingBuff.String())
+				fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
 			}
 		}
 	}
