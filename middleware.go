@@ -117,7 +117,7 @@ func WithTracing(
 				}
 			}
 			if opts.aggregateLogging {
-				if opts.emptyAggregateEntries || (!opts.emptyAggregateEntries && aggregateLoggingBuff.Length() > 0) {
+				if aggregateLoggingBuff.Length() > 0 || opts.emptyAggregateEntries {
 					aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
 					// if useBanner {
 					// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
