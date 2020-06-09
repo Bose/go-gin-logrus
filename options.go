@@ -11,6 +11,7 @@ import (
 type Option func(*options)
 type options struct {
 	aggregateLogging bool
+	emptyAggregateEntries bool
 	logLevel         logrus.Level
 	writer           io.Writer
 	banner           string
@@ -19,6 +20,7 @@ type options struct {
 // defaultOptions - some defs options to NewJWTCache()
 var defaultOptions = options{
 	aggregateLogging: false,
+	emptyAggregateEntries: true,
 	logLevel:         logrus.DebugLevel,
 	writer:           os.Stdout,
 	banner:           DefaultBanner,
@@ -28,6 +30,13 @@ var defaultOptions = options{
 func WithAggregateLogging(a bool) Option {
 	return func(o *options) {
 		o.aggregateLogging = a
+	}
+}
+
+// WithEmptyAggregateEntries - define an Option func for printing aggregate logs with empty entries
+func WithEmptyAggregateEntries(a bool) Option {
+	return func(o *options) {
+		o.emptyAggregateEntries = a
 	}
 }
 
