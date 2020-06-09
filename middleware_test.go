@@ -19,6 +19,78 @@ func performRequest(method, target string, router *gin.Engine) *httptest.Respons
 	return w
 }
 
+func TestNoLogMessageWithEmptyAggregateEntries(t *testing.T) {
+	is := is.New(t)
+	buff := ""
+	getHandler := func(c *gin.Context) {
+		SetCtxLoggerHeader(c, "EmptyEntries", "Nothing should be printed")
+
+		logger := GetCtxLogger(c)
+		logger.Info("test-entry-1")
+		logger.Info("test-entry-2")
+		c.JSON(200, "Hello world!")
+	}
+	gin.SetMode(gin.DebugMode)
+	gin.DisableConsoleColor()
+
+	l := bytes.NewBufferString(buff)
+	r := gin.Default()
+	r.Use(WithTracing(logrus.StandardLogger(),
+		false,
+		time.RFC3339,
+		true,
+		"requestID",
+		[]byte("uber-trace-id"), // where jaeger might have put the trace id
+		[]byte("RequestID"),     // where the trace ID might already be populated in the headers
+		WithAggregateLogging(true),
+		WithEmptyAggregateEntries(false),
+		WithLogLevel(logrus.WarnLevel),
+		WithWriter(l)))
+	r.GET("/", getHandler)
+	w := performRequest("GET", "/", r)
+	is.Equal(200, w.Code)
+	t.Log("this is the buffer: ", l)
+	is.True(len(l.String()) == 0)
+}
+
+func TestLogMessageWithEmptyAggregateEntriesAboveLogLevel(t *testing.T) {
+	is := is.New(t)
+	buff := ""
+	getHandler := func(c *gin.Context) {
+		SetCtxLoggerHeader(c, "AggregateEntries", "Shouldnt have messages below WARN")
+
+		logger := GetCtxLogger(c)
+		logger.Info("test-entry-1")
+		logger.Info("test-entry-2")
+		logger.Error("error-entry-1")
+		c.JSON(200, "Hello world!")
+	}
+	gin.SetMode(gin.DebugMode)
+	gin.DisableConsoleColor()
+
+	l := bytes.NewBufferString(buff)
+	r := gin.Default()
+	r.Use(WithTracing(logrus.StandardLogger(),
+		false,
+		time.RFC3339,
+		true,
+		"requestID",
+		[]byte("uber-trace-id"), // where jaeger might have put the trace id
+		[]byte("RequestID"),     // where the trace ID might already be populated in the headers
+		WithAggregateLogging(true),
+		WithEmptyAggregateEntries(false),
+		WithLogLevel(logrus.WarnLevel),
+		WithWriter(l)))
+	r.GET("/", getHandler)
+	w := performRequest("GET", "/", r)
+	is.Equal(200, w.Code)
+	t.Log("this is the buffer: ", l)
+	is.True(len(l.String()) > 0)
+	is.True(!strings.Contains(l.String(), "test-entry-1"))
+	is.True(!strings.Contains(l.String(), "test-entry-2"))
+	is.True(strings.Contains(l.String(), "error-entry-1"))
+}
+
 func TestBanner(t *testing.T) {
 	is := is.New(t)
 	buff := ""

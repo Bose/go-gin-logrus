@@ -43,6 +43,48 @@ func TestLogBuffer_String(t *testing.T) {
 	}
 }
 
+func TestLogBuffer_Length(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		buff     LogBuffer
+		write    []byte
+		expectedLength int
+	}{
+		{
+			name:     "hey",
+			buff:     NewLogBuffer(WithBanner(true), WithHeader("id1", "val1"), WithHeader("id2", "id2")),
+			write:    []byte("\"msg\":\"hey-one\""),
+			expectedLength: 16,
+		},
+		{
+			name:     "hey-now",
+			buff:     NewLogBuffer(WithHeader("hey", "now")),
+			write:    []byte("\"msg\":\"hey-two\""),
+			expectedLength: 16,
+		},
+		{
+			name:     "hey-now",
+			buff:     NewLogBuffer(WithHeader("hey", "now")),
+			write:    []byte("\"msg\":\"hey-three\",\"msg\":\"hey-four\""),
+			expectedLength: 35,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.buff.Write(tt.write)
+			if err != nil {
+				t.Error("LogBuffer.String() Write error: ", err)
+			}
+			fmt.Println("buff == ", tt.buff.String())
+
+			if tt.buff.Length() != tt.expectedLength {
+				t.Errorf("LogBuffer.Length() = %v, want %v", tt.buff.Length(), tt.expectedLength)
+			}
+		})
+	}
+}
+
 func TestNewLogBuffer(t *testing.T) {
 	tests := []struct {
 		name string
