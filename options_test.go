@@ -25,6 +25,26 @@ func TestWithAggregateLogging(t *testing.T) {
 	}
 }
 
+func TestWithEmptyAggregateEntries(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+	}{
+		{name: "true", want: true},
+		{name: "false", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := defaultOptions
+			f := WithEmptyAggregateEntries(tt.want)
+			f(&opts)
+			if opts.emptyAggregateEntries != tt.want {
+				t.Errorf("WithEmptyAggregateEntries() = %v, want %v", opts.emptyAggregateEntries, tt.want)
+			}
+		})
+	}
+}
+
 func TestWithLogLevel(t *testing.T) {
 	tests := []struct {
 		name string

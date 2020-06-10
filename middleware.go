@@ -117,11 +117,13 @@ func WithTracing(
 				}
 			}
 			if opts.aggregateLogging {
-				aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
-				// if useBanner {
-				// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
-				// }
-				fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
+				if aggregateLoggingBuff.Length() > 0 || opts.emptyAggregateEntries {
+					aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
+					// if useBanner {
+					// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
+					// }
+					fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
+				}
 			}
 		}
 	}

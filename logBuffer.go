@@ -105,6 +105,11 @@ func (b *LogBuffer) Write(data []byte) (n int, err error) {
 	return b.Buff.Write(append(newData, []byte(",")...))
 }
 
+// Length - return the length of the aggregate log buffer
+func (b *LogBuffer) Length() int {
+	return b.Buff.Len()
+}
+
 // String - output the strings.Builder as one aggregated JSON object
 func (b *LogBuffer) String() string {
 	var str strings.Builder
