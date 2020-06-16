@@ -4,26 +4,32 @@ import (
 	"io"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 // Option - define options for WithTracing()
 type Option func(*options)
+
+type ReducedLoggingFunc func(c *gin.Context) bool
+
 type options struct {
-	aggregateLogging bool
+	aggregateLogging      bool
+	logLevel              logrus.Level
 	emptyAggregateEntries bool
-	logLevel         logrus.Level
-	writer           io.Writer
-	banner           string
+	reducedLoggingFunc    ReducedLoggingFunc
+	writer                io.Writer
+	banner                string
 }
 
 // defaultOptions - some defs options to NewJWTCache()
 var defaultOptions = options{
-	aggregateLogging: false,
+	aggregateLogging:      false,
+	logLevel:              logrus.DebugLevel,
 	emptyAggregateEntries: true,
-	logLevel:         logrus.DebugLevel,
-	writer:           os.Stdout,
-	banner:           DefaultBanner,
+	reducedLoggingFunc:    func(c *gin.Context) bool { return true },
+	writer:                os.Stdout,
+	banner:                DefaultBanner,
 }
 
 // WithAggregateLogging - define an Option func for passing in an optional aggregateLogging
@@ -37,6 +43,13 @@ func WithAggregateLogging(a bool) Option {
 func WithEmptyAggregateEntries(a bool) Option {
 	return func(o *options) {
 		o.emptyAggregateEntries = a
+	}
+}
+
+// WithEmptyAggregateEntries - define an Option func for printing aggregate logs with empty entries
+func WithReducedLoggingFunc(a ReducedLoggingFunc) Option {
+	return func(o *options) {
+		o.reducedLoggingFunc = a
 	}
 }
 
