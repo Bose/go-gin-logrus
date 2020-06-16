@@ -40,6 +40,7 @@ func WithTracing(
 	contextTraceIDField []byte,
 	opt ...Option) gin.HandlerFunc {
 	opts := defaultOptions
+
 	for _, o := range opt {
 		o(&opts)
 	}
@@ -116,13 +117,16 @@ func WithTracing(
 					entry.Info()
 				}
 			}
+			// If aggregate logging is enabled, check if we have entries to log or we are not omitting empty logs
 			if opts.aggregateLogging {
-				if aggregateLoggingBuff.Length() > 0 || opts.emptyAggregateEntries {
-					aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
-					// if useBanner {
-					// 	fields["banner"] = "[GIN] --------------------------------------------------------------- GinLogrusWithTracing ----------------------------------------------------------------"
-					// }
-					fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
+				//  If we are running structured logging, execute the reduced logging function(default to true)
+				// if we pass the check, check if we have any entries to log or if we are logging empty entries (default to true)
+				executeReduced := opts.reducedLoggingFunc(c)
+				if executeReduced {
+					if aggregateLoggingBuff.Length() > 0 || opts.emptyAggregateEntries {
+						aggregateLoggingBuff.StoreHeader("request-summary-info", fields)
+						fmt.Fprintf(opts.writer, aggregateLoggingBuff.String())
+					}
 				}
 			}
 		}

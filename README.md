@@ -180,3 +180,30 @@ func newSpanFromContext(c *gin.Context, operationName string) opentracing.Span {
 
 See the [example.go file](https://github.com/Bose/go-gin-logrus/blob/master/example/example.go)
 
+## Reduced Logging Options
+The Options.WithReducedLoggingFunc(c *gin.Context) allows users to specify a function for determining whether or not logs will be written. This function can be used with aggregate logging in situations where users want to maintain the details and fidelity of log messages but not necessarily log on every single request. The example below allows users to maintain aggregate logs at the DEBUG level but only write logs out on non-2xx response codes. 
+Reduced Logging Function:
+``` go
+// This function will determine whether to write a log message or not.
+// When the request is not a 2xx the function will return true indicating that a log message should be written.
+func ProductionLogging(c *gin.Context) bool {
+	statusCode := c.Writer.Status()
+	if statusCode < http.StatusOK || statusCode >= http.StatusMultipleChoices {
+		return true
+	}
+	return false
+}
+```
+
+``` go
+	r.Use(ginlogrus.WithTracing(logrus.StandardLogger(),
+		useBanner,
+		time.RFC3339,
+		useUTC,
+		"requestID",
+		[]byte("uber-trace-id"), // where jaeger might have put the trace id
+		[]byte("RequestID"),     // where the trace ID might already be populated in the headers
+		ginlogrus.WithAggregateLogging(true),
+		ginlogrus.WithReducedLoggingFunc(ProductionLogging)))
+```
+
