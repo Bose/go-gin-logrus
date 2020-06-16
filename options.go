@@ -11,6 +11,8 @@ import (
 // Option - define options for WithTracing()
 type Option func(*options)
 
+// Function definition for reduced logging. The return value of this function
+// will be used to determine whether or not a log will be output.
 type ReducedLoggingFunc func(c *gin.Context) bool
 
 type options struct {
@@ -46,7 +48,7 @@ func WithEmptyAggregateEntries(a bool) Option {
 	}
 }
 
-// WithEmptyAggregateEntries - define an Option func for printing aggregate logs with empty entries
+// WithReducedLoggingFunc - define an Option func for reducing logs based on a custom function
 func WithReducedLoggingFunc(a ReducedLoggingFunc) Option {
 	return func(o *options) {
 		o.reducedLoggingFunc = a
